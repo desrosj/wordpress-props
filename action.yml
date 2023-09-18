@@ -1,6 +1,10 @@
-name: 'Wait'
-description: 'Wait a designated number of milliseconds'
+name: 'WordPress Props'
+description: 'Collects a list of contributors associated with a pull request and lists WordPress.org usernames.'
 inputs:
+  token:
+    description: 'GitHub secret token.'
+    required: true
+    default: ${{ github.token }}
   milliseconds:  # id of input
     description: 'number of milliseconds to wait'
     required: true
@@ -9,5 +13,5 @@ outputs:
   time: # output will be available to future steps
     description: 'The current time after waiting'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
