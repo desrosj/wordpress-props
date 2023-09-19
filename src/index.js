@@ -1,13 +1,7 @@
 // Load dependencies
 const core = require('@actions/core');
 const github = require('@actions/github');
-const context = github.context;
 const fetch = require('node-fetch');
-
-/**
- * Internal dependencies.
- */
-const utils = require('./utils');
 
 /**
  * Types of contributions collected.
@@ -36,6 +30,54 @@ const contributors = contributorTypes.reduce((acc, type) => {
 	contributors[type] = new Set();
 	return acc;
 }, {});
+
+
+/**
+ * Sanitizes a string for a GraphQL query.
+ *
+ * @param string
+ * @returns {Promise<string>}
+ */
+async function escapeForGql( string ) {
+	return '_' + string.replace( /[./-]/g, '_' );
+}
+
+/**
+ * Checks if a user should be skipped.
+ *
+ * @param {string} username Username to check.
+ *
+ * @return {boolean} true if the username should be skipped. false otherwise.
+ */
+async function skipUser( username ) {
+	const skippedUsers = [ 'github-actions' ];
+
+	if (
+		-1 === skippedUsers.indexOf( username ) &&
+		! contributorAlreadyPresent( username )
+	) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Checks if a user has already been added to the list of contributors to receive props.
+ *
+ * Contributors should only appear in the props list once, even when contributing in multiple ways.
+ *
+ * @param {string} username The username to check.
+ *
+ * @return {boolean} true if the username is already in the list. false otherwise.
+ */
+async function contributorAlreadyPresent( username ) {
+	for ( const contributorType of contributorTypes ) {
+		if ( contributors[ contributorType ].has( username ) ) {
+			return true;
+		}
+	}
+}
 
 async function run() {
 	const octokit = github.getOctokit( core.getInput( 'token' ) );
@@ -100,9 +142,9 @@ async function run() {
 			}
 		}`,
 		{
-			owner: context.repo.owner,
-			name: context.repo.repo,
-			prNumber: context.payload.pull_request.number,
+			owner: github.context.repo.owner,
+			name: github.context.repo.repo,
+			prNumber: github.context.payload.pull_request.number,
 		}
 	);
 
@@ -119,7 +161,7 @@ async function run() {
 				email: commit.commit.author.email,
 			};
 		} else {
-			if ( utils.skipUser( commit.commit.author.user.login ) ) {
+			if ( skipUser( commit.commit.author.user.login ) ) {
 				continue;
 			}
 
@@ -130,22 +172,22 @@ async function run() {
 
 	// Process pull request reviews.
 	contributorData.repository.pullRequest.reviews.nodes
-		.filter(review => !utils.skipUser(review.author.login))
+		.filter(review => !skipUser(review.author.login))
 		.forEach(review => contributors.reviewers.add(review.author.login));
 
 	// Process pull request comments.
 	contributorData.repository.pullRequest.comments.nodes
-		.filter(comment => !utils.skipUser(comment.author.login))
+		.filter(comment => !skipUser(comment.author.login))
 		.forEach(comment => contributors.commenters.add(comment.author.login));
 
 	// Process reporters and commenters for linked issues.
 	for ( const linkedIssue of contributorData.repository.pullRequest.closingIssuesReferences.nodes ) {
-		if ( ! utils.skipUser( linkedIssue.author.login ) ) {
+		if ( ! skipUser( linkedIssue.author.login ) ) {
 			contributors.reporters.add( linkedIssue.author.login );
 		}
 
 		for ( const issueComment of linkedIssue.comments.nodes ) {
-			if ( utils.skipUser( issueComment.author.login ) ) {
+			if ( skipUser( issueComment.author.login ) ) {
 				continue;
 			}
 
@@ -169,7 +211,7 @@ async function run() {
 					...contributors.reporters,
 				].map(
 					( user ) =>
-						utils.escapeForGql( user ) +
+						escapeForGql( user ) +
 						`: user(login: "${ user }") {databaseId, login, name, email}`
 				) +
 				'}'
