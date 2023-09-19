@@ -9597,77 +9597,6 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 1608:
-/***/ ((module) => {
-
-/**
- * Sanitizes a string for a GraphQL query.
- *
- * @param string
- * @returns {Promise<string>}
- */
-async function escapeForGql( string ) {
-    return '_' + string.replace( /[./-]/g, '_' );
-}
-
-/**
- * Checks if a user should be skipped.
- *
- * @param {string} username Username to check.
- *
- * @return {boolean} true if the username should be skipped. false otherwise.
- */
-async function skipUser( username ) {
-    const skippedUsers = [ 'github-actions' ];
-
-    if (
-        -1 === skippedUsers.indexOf( username ) &&
-        ! contributorAlreadyPresent( username )
-    ) {
-        return false;
-    }
-
-    return true;
-}
-
-/**
- * Checks if a user has already been added to the list of contributors to receive props.
- *
- * Contributors should only appear in the props list once, even when contributing in multiple ways.
- *
- * @param {string} username The username to check.
- *
- * @return {boolean} true if the username is already in the list. false otherwise.
- */
-async function contributorAlreadyPresent( username ) {
-    for ( const contributorType of contributorTypes ) {
-        if ( contributors[ contributorType ].has( username ) ) {
-            return true;
-        }
-    }
-}
-
-module.exports = utils;
-
-/***/ }),
-
-/***/ 1312:
-/***/ ((module) => {
-
-let wait = function (milliseconds) {
-  return new Promise((resolve) => {
-    if (typeof milliseconds !== 'number') {
-      throw new Error('milliseconds not a number');
-    }
-    setTimeout(() => resolve("done!"), milliseconds)
-  });
-};
-
-module.exports = wait;
-
-
-/***/ }),
-
 /***/ 2877:
 /***/ ((module) => {
 
@@ -9848,14 +9777,7 @@ var __webpack_exports__ = {};
 // Load dependencies
 const core = __nccwpck_require__(2186);
 const github = __nccwpck_require__(5438);
-const context = github.context;
 const fetch = __nccwpck_require__(467);
-
-/**
- * Internal dependencies.
- */
-const utils = __nccwpck_require__(1608);
-const wait = __nccwpck_require__(1312);
 
 /**
  * Types of contributions collected.
@@ -9885,7 +9807,54 @@ const contributors = contributorTypes.reduce((acc, type) => {
 	return acc;
 }, {});
 
-// most @actions toolkit packages have async methods
+
+/**
+ * Sanitizes a string for a GraphQL query.
+ *
+ * @param string
+ * @returns {Promise<string>}
+ */
+async function escapeForGql( string ) {
+	return '_' + string.replace( /[./-]/g, '_' );
+}
+
+/**
+ * Checks if a user should be skipped.
+ *
+ * @param {string} username Username to check.
+ *
+ * @return {boolean} true if the username should be skipped. false otherwise.
+ */
+async function skipUser( username ) {
+	const skippedUsers = [ 'github-actions' ];
+
+	if (
+		-1 === skippedUsers.indexOf( username ) &&
+		! contributorAlreadyPresent( username )
+	) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Checks if a user has already been added to the list of contributors to receive props.
+ *
+ * Contributors should only appear in the props list once, even when contributing in multiple ways.
+ *
+ * @param {string} username The username to check.
+ *
+ * @return {boolean} true if the username is already in the list. false otherwise.
+ */
+async function contributorAlreadyPresent( username ) {
+	for ( const contributorType of contributorTypes ) {
+		if ( contributors[ contributorType ].has( username ) ) {
+			return true;
+		}
+	}
+}
+
 async function run() {
 	const octokit = github.getOctokit( core.getInput( 'token' ) );
 
@@ -9949,9 +9918,9 @@ async function run() {
 			}
 		}`,
 		{
-			owner: context.repo.owner,
-			name: context.repo.repo,
-			prNumber: context.payload.pull_request.number,
+			owner: github.context.repo.owner,
+			name: github.context.repo.repo,
+			prNumber: github.context.payload.pull_request.number,
 		}
 	);
 
@@ -9968,7 +9937,7 @@ async function run() {
 				email: commit.commit.author.email,
 			};
 		} else {
-			if ( utils.skipUser( commit.commit.author.user.login ) ) {
+			if ( skipUser( commit.commit.author.user.login ) ) {
 				continue;
 			}
 
@@ -9979,22 +9948,22 @@ async function run() {
 
 	// Process pull request reviews.
 	contributorData.repository.pullRequest.reviews.nodes
-		.filter(review => !utils.skipUser(review.author.login))
+		.filter(review => !skipUser(review.author.login))
 		.forEach(review => contributors.reviewers.add(review.author.login));
 
 	// Process pull request comments.
 	contributorData.repository.pullRequest.comments.nodes
-		.filter(comment => !utils.skipUser(comment.author.login))
+		.filter(comment => !skipUser(comment.author.login))
 		.forEach(comment => contributors.commenters.add(comment.author.login));
 
 	// Process reporters and commenters for linked issues.
 	for ( const linkedIssue of contributorData.repository.pullRequest.closingIssuesReferences.nodes ) {
-		if ( ! utils.skipUser( linkedIssue.author.login ) ) {
+		if ( ! skipUser( linkedIssue.author.login ) ) {
 			contributors.reporters.add( linkedIssue.author.login );
 		}
 
 		for ( const issueComment of linkedIssue.comments.nodes ) {
-			if ( utils.skipUser( issueComment.author.login ) ) {
+			if ( skipUser( issueComment.author.login ) ) {
 				continue;
 			}
 
@@ -10018,7 +9987,7 @@ async function run() {
 					...contributors.reporters,
 				].map(
 					( user ) =>
-						utils.escapeForGql( user ) +
+						escapeForGql( user ) +
 						`: user(login: "${ user }") {databaseId, login, name, email}`
 				) +
 				'}'
@@ -10095,28 +10064,6 @@ async function run() {
 		);
 	})
 	.join( '\n\n' );
-
-
-
-
-
-
-
-
-
-
-	try {
-		const ms = core.getInput('milliseconds');
-		core.info(`Waiting ${ms} milliseconds ...`);
-
-		core.debug((new Date()).toTimeString()); // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
-		await wait(parseInt(ms));
-		core.info((new Date()).toTimeString());
-
-		core.setOutput('time', new Date().toTimeString());
-	} catch (error) {
-		core.setFailed(error.message);
-	}
 }
 
 run();
