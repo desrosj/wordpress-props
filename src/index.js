@@ -31,7 +31,6 @@ const contributors = contributorTypes.reduce((acc, type) => {
 	return acc;
 }, {});
 
-
 /**
  * Sanitizes a string for a GraphQL query.
  *
@@ -174,11 +173,16 @@ async function run() {
 		}
 	}
 
+	console.debug( contributors );
+	console.debug( userData );
+
 	// Process pull request reviews.
 	contributorData.repository.pullRequest.reviews.nodes
 		.filter(review => !skipUser(review.author.login))
 		.forEach(review => contributors.reviewers.add(review.author.login));
 
+	console.debug( contributors );
+	
 	// Process pull request comments.
 	contributorData.repository.pullRequest.comments.nodes
 		.filter(comment => !skipUser(comment.author.login))
