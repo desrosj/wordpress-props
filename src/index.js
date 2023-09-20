@@ -148,6 +148,10 @@ async function run() {
 		}
 	);
 
+	console.debug( github.context );
+	console.log( github.context.repo.owner );
+	console.log( github.context.payload.pull_request.number );
+
 	// Process pull request commits.
 	for ( const commit of contributorData.repository.pullRequest.commits.nodes ) {
 		/*

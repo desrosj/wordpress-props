@@ -9862,6 +9862,10 @@ async function run() {
 		}
 	);
 
+	console.debug( _actions_github__WEBPACK_IMPORTED_MODULE_1__.context );
+	console.log( _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner );
+	console.log( _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request.number );
+
 	// Process pull request commits.
 	for ( const commit of contributorData.repository.pullRequest.commits.nodes ) {
 		/*
