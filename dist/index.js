@@ -9862,7 +9862,9 @@ async function run() {
 		}
 	);
 
-	console.debug( contributorData );
+	console.debug( ...contributorData.repository.pullRequest.commits.nodes );
+	console.debug( ...contributorData.repository.pullRequest.reviews.nodes );
+	console.debug( ...contributorData.repository.pullRequest.comments.nodes );
 
 	// Process pull request commits.
 	for ( const commit of contributorData.repository.pullRequest.commits.nodes ) {
@@ -9950,6 +9952,11 @@ async function run() {
 			githubUsers.push(contributor);
 		});
 	});
+
+	// No contributors were gathered.
+	if ( githubUsers.length == 0 ) {
+		return;
+	}
 
 	await node_fetch__WEBPACK_IMPORTED_MODULE_2__( dotorgGHApi, {
 		method: 'POST',
