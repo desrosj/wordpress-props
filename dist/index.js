@@ -9862,9 +9862,7 @@ async function run() {
 		}
 	);
 
-	console.debug( _actions_github__WEBPACK_IMPORTED_MODULE_1__.context );
-	console.log( _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner );
-	console.log( _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request.number );
+	console.debug( contributorData );
 
 	// Process pull request commits.
 	for ( const commit of contributorData.repository.pullRequest.commits.nodes ) {
@@ -9957,6 +9955,7 @@ async function run() {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
+			'User-Agent': 'Props Bot: ' + _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner + '/' + _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo,
 		},
 		body: JSON.stringify({ github_user: githubUsers }),
 	})

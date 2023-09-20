@@ -148,9 +148,7 @@ async function run() {
 		}
 	);
 
-	console.debug( github.context );
-	console.log( github.context.repo.owner );
-	console.log( github.context.payload.pull_request.number );
+	console.debug( contributorData );
 
 	// Process pull request commits.
 	for ( const commit of contributorData.repository.pullRequest.commits.nodes ) {
@@ -243,6 +241,7 @@ async function run() {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
+			'User-Agent': 'Props Bot: ' + github.context.repo.owner + '/' + github.context.repo.repo,
 		},
 		body: JSON.stringify({ github_user: githubUsers }),
 	})

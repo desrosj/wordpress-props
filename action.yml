@@ -5,13 +5,6 @@ inputs:
     description: 'GitHub secret token.'
     required: true
     default: ${{ github.token }}
-  milliseconds:  # id of input
-    description: 'number of milliseconds to wait'
-    required: true
-    default: '1000'
-outputs:
-  time: # output will be available to future steps
-    description: 'The current time after waiting'
 runs:
   using: 'node20'
   main: 'dist/index.js'
