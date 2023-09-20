@@ -9741,7 +9741,7 @@ const userData = [];
  * @type {*[]}
  */
 const contributors = contributorTypes.reduce((acc, type) => {
-	contributors[type] = new Set();
+	acc[type] = new Set();
 	return acc;
 }, {});
 
