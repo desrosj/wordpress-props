@@ -147,17 +147,15 @@ async function run() {
 		}
 	);
 
-	console.debug( ...contributorData.repository.pullRequest.commits.nodes );
-	console.debug( ...contributorData.repository.pullRequest.reviews.nodes );
-	console.debug( ...contributorData.repository.pullRequest.comments.nodes );
-
 	// Process pull request commits.
 	for ( const commit of contributorData.repository.pullRequest.commits.nodes ) {
+		console.debug( commit );
 		/*
 		 * Commits are sometimes made by an email that is not associated with a GitHub account.
 		 * For these, info that may help us guess later.
 		 */
 		if ( null === commit.commit.author.user ) {
+			console.log( 'User object does not exist.' );
 			contributors.committers.add( commit.commit.author.email );
 			userData[ commit.commit.author.email ] = {
 				name: commit.commit.author.name,
@@ -168,6 +166,7 @@ async function run() {
 				continue;
 			}
 
+			console.log( 'Logging committer' );
 			contributors.committers.add( commit.commit.author.user.login );
 			userData[ commit.commit.author.user.login ] = commit.commit.author.user;
 		}
@@ -182,7 +181,7 @@ async function run() {
 		.forEach(review => contributors.reviewers.add(review.author.login));
 
 	console.debug( contributors );
-	
+
 	// Process pull request comments.
 	contributorData.repository.pullRequest.comments.nodes
 		.filter(comment => !skipUser(comment.author.login))
