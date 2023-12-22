@@ -3,9 +3,7 @@ import * as github from "@actions/github";
 
 export default class GitHub {
   constructor() {
-    // TODO: auto get GITHUB_TOKEN as fallback if token is not provided.
-    const token =
-      core.getInput("token") || "";
+    const token = core.getInput("token") || process.env.GITHUB_TOKEN || "";
     this.octokit = github.getOctokit(token);
   }
 
@@ -31,7 +29,7 @@ export default class GitHub {
    * @param {string} owner The owner of the repository.
    * @param {string} repo The name of the repository.
    * @param {number} prNumber The PR number.
-   * 
+   *
    * @returns {Promise<Object>} The PR contribution data.
    */
   async getContributorData({ owner, repo, prNumber }) {
@@ -94,7 +92,7 @@ export default class GitHub {
 
   /**
    * Gets the user data for a given array of usernames.
-   * 
+   *
    * @param {string[]} users The array of usernames.
    * @returns {Promise<Object>} The user data.
    */
@@ -114,68 +112,68 @@ export default class GitHub {
   /**
    * Adds a comment to a PR with the list of contributors.
    * - If a comment already exists, it will be updated.
-   * 
+   *
    * @param {Object} context The GitHub context.
    * @param {string} contributorsList The list of contributors.
    */
   async commentProps({ context, contributorsList }) {
-	if ( ! contributorsList ) {
-		console.log( 'No contributors list provided' );
-		return;
-	}
+    if (!contributorsList) {
+      console.log("No contributors list provided");
+      return;
+    }
 
-	let commentId;
-	const commentInfo = {
-		owner: context.repo.owner,
-		repo: context.repo.repo,
-		issue_number: context.payload.pull_request.number,
-	};
+    let commentId;
+    const commentInfo = {
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      issue_number: context.payload.pull_request.number,
+    };
 
-	const commentMessage =
-		'Here is a list of everyone that appears to have contributed to this PR and any linked issues:\n\n' +
-		'```\n' +
-		contributorsList +
-		'\n```';
+    const commentMessage =
+      "Here is a list of everyone that appears to have contributed to this PR and any linked issues:\n\n" +
+      "```\n" +
+      contributorsList +
+      "\n```";
 
-	const comment = {
-		...commentInfo,
-		body: commentMessage + '\n\n<sub>contributor-collection-action</sub>',
-	};
+    const comment = {
+      ...commentInfo,
+      body: commentMessage + "\n\n<sub>contributor-collection-action</sub>",
+    };
 
-	const comments = ( await this.octokit.rest.issues.listComments( commentInfo ) )
-		.data;
-	for ( const currentComment of comments ) {
-		if (
-			currentComment.user.type === 'Bot' &&
-			/<sub>[\s\n]*contributor-collection-action/.test( currentComment.body )
-		) {
-			commentId = currentComment.id;
-			break;
-		}
-	}
+    const comments = (await this.octokit.rest.issues.listComments(commentInfo))
+      .data;
+    for (const currentComment of comments) {
+      if (
+        currentComment.user.type === "Bot" &&
+        /<sub>[\s\n]*contributor-collection-action/.test(currentComment.body)
+      ) {
+        commentId = currentComment.id;
+        break;
+      }
+    }
 
-	if ( commentId ) {
-		console.log( `Updating previous comment #${ commentId }` );
-		try {
-			await this.octokit.rest.issues.updateComment( {
-				...context.repo,
-				comment_id: commentId,
-				body: comment.body,
-			} );
-		} catch ( e ) {
-			console.log( 'Error editing previous comment: ' + e.message );
-			commentId = null;
-		}
-	}
+    if (commentId) {
+      console.log(`Updating previous comment #${commentId}`);
+      try {
+        await this.octokit.rest.issues.updateComment({
+          ...context.repo,
+          comment_id: commentId,
+          body: comment.body,
+        });
+      } catch (e) {
+        console.log("Error editing previous comment: " + e.message);
+        commentId = null;
+      }
+    }
 
-	// No previous or edit comment failed.
-	if ( ! commentId ) {
-		console.log( 'Creating new comment' );
-		try {
-			await this.octokit.rest.issues.createComment( comment );
-		} catch ( e ) {
-			console.log( `Error creating comment: ${ e.message }` );
-		}
-	}
+    // No previous or edit comment failed.
+    if (!commentId) {
+      console.log("Creating new comment");
+      try {
+        await this.octokit.rest.issues.createComment(comment);
+      } catch (e) {
+        console.log(`Error creating comment: ${e.message}`);
+      }
+    }
   }
 }
