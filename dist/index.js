@@ -35406,11 +35406,16 @@ class GitHub {
       return;
     }
 
+    let prNumber = context.payload?.pull_request?.number;
+    if ( 'issue_comment' === context.eventName ) {
+      prNumber = context.payload?.issue?.number;
+    }
+
     let commentId;
     const commentInfo = {
       owner: context.repo.owner,
       repo: context.repo.repo,
-      issue_number: context.payload.pull_request.number,
+      issue_number: prNumber,
     };
 
     const commentMessage =
@@ -37646,7 +37651,10 @@ const { context } = github;
 const gh = new GitHub();
 const owner = context.repo.owner;
 const repo = context.repo.repo;
-const prNumber = context.payload?.pull_request?.number;
+let prNumber = context.payload?.pull_request?.number;
+if ( 'issue_comment' === context.eventName ) {
+  prNumber = context.payload?.issue?.number;
+}
 
 /**
  * Types of contributions collected.
