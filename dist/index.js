@@ -35286,39 +35286,40 @@ var github = __nccwpck_require__(5438);
 
 
 class GitHub {
-  constructor() {
-    const token = core.getInput("token") || process.env.GITHUB_TOKEN || "";
-    this.octokit = github.getOctokit(token);
-  }
+	constructor() {
+		const token = core.getInput("token") || process.env.GITHUB_TOKEN || "";
+		this.octokit = github.getOctokit(token);
+	}
 
-  /**
+	/**
    * Sanitizes a string for a GraphQL query.
    *
    * @param string
    * @returns string
    */
-  escapeForGql(string) {
-    return "_" + string.replace(/[./-]/g, "_");
-  }
+	escapeForGql(string) {
+		return "_" + string.replace(/[./-]/g, "_");
+	}
 
-  /**
-   * Gets the contribution data for a given PR.
-   * Fetch the following data for the pull request:
-   * - Commits with author details.
-   * - Reviews with author logins.
-   * - Comments with author logins.
-   * - Linked issues with author logins.
-   * - Comments on linked issues with author logins.
-   *
-   * @param {string} owner The owner of the repository.
-   * @param {string} repo The name of the repository.
-   * @param {number} prNumber The PR number.
-   *
-   * @returns {Promise<Object>} The PR contribution data.
-   */
-  async getContributorData({ owner, repo, prNumber }) {
-    const data = await this.octokit.graphql(
-      `query($owner:String!, $name:String!, $prNumber:Int!) {
+	/**
+	 * Gets the contribution data for a given PR.
+	 * Fetch the following data for the pull request:* - Commits with author details.
+	 * - Reviews with author logins.
+	 * - Comments with author logins.
+	 * - Linked issues with author logins.
+	 * - Comments on linked issues with author logins.
+	 *
+	 * @param {string} owner The owner of the repository.
+	 * @param {string} repo The name of the repository.
+	 * @param {number} prNumber The PR number.
+	 *
+	 * @returns {Promise<Object>} The PR contribution data.
+	 */
+	async getContributorData({ owner, repo, prNumber }) {
+		core.info('Gathering contributor list.');
+
+		const data = await this.octokit.graphql(
+			`query($owner:String!, $name:String!, $prNumber:Int!) {
 				repository(owner:$owner, name:$name) {
 					pullRequest(number:$prNumber) {
 						commits(first: 100) {
@@ -35368,98 +35369,98 @@ class GitHub {
 					}
 				}
 			}`,
-      { owner, name: repo, prNumber }
-    );
+			{ owner, name: repo, prNumber }
+		);
 
-    return data?.repository?.pullRequest;
-  }
+		return data?.repository?.pullRequest;
+	}
 
-  /**
-   * Gets the user data for a given array of usernames.
-   *
-   * @param {string[]} users The array of usernames.
-   * @returns {Promise<Object>} The user data.
-   */
-  async getUsersData(users = []) {
-    const userData = await this.octokit.graphql(
-      "{" +
-        users.map(
-          (user) =>
-            this.escapeForGql(user) +
-            `: user(login: "${user}") {databaseId, login, name, email}`
-        ) +
-        "}"
-    );
-    return userData;
-  }
+	/**
+	 * Gets the user data for a given array of usernames.
+	 *
+	 * @param {string[]} users The array of usernames.
+	 * @returns {Promise<Object>} The user data.
+	 */
+	async getUsersData(users = []) {
+		const userData = await this.octokit.graphql(
+			"{" +
+			users.map(
+        		(user) =>
+        		this.escapeForGql(user) +
+            	`: user(login: "${user}") {databaseId, login, name, email}`
+        	) +
+        	"}"
+		);
+		return userData;
+	}
 
-  /**
-   * Adds a comment to a PR with the list of contributors.
-   * - If a comment already exists, it will be updated.
-   *
-   * @param {Object} context The GitHub context.
-   * @param {string} contributorsList The list of contributors.
-   */
-  async commentProps({ context, contributorsList }) {
-    if (!contributorsList) {
-      console.log("No contributors list provided");
-      return;
-    }
+	/**
+	 * Adds a comment to a PR with the list of contributors.
+	 * - If a comment already exists, it will be updated.
+	 *
+	 * @param {Object} context The GitHub context.
+	 * @param {string} contributorsList The list of contributors.
+	 */
+	async commentProps({ context, contributorsList }) {
+		if (!contributorsList) {
+			core.info("No contributors list provided.");
+			return;
+		}
 
-    let commentId;
-    const commentInfo = {
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      issue_number: context.payload.pull_request.number,
-    };
+		let commentId;
+		const commentInfo = {
+			owner: context.repo.owner,
+			repo: context.repo.repo,
+			issue_number: context.payload.pull_request.number,
+		};
 
-    const commentMessage =
-      "Here is a list of everyone that appears to have contributed to this PR and any linked issues:\n\n" +
-      "```\n" +
-      contributorsList +
-      "\n```";
+		const commentMessage =
+		"Here is a list of everyone that appears to have contributed to this PR and any linked issues:\n\n" +
+		"```\n" +
+		contributorsList +
+		"\n```";
 
-    const comment = {
-      ...commentInfo,
-      body: commentMessage + "\n\n<sub>contributor-collection-action</sub>",
-    };
+		const comment = {
+			...commentInfo,
+			body: commentMessage + "\n\n<sub>contributor-collection-action</sub>",
+		};
 
-    const comments = (await this.octokit.rest.issues.listComments(commentInfo))
-      .data;
-    for (const currentComment of comments) {
-      if (
-        currentComment.user.type === "Bot" &&
-        /<sub>[\s\n]*contributor-collection-action/.test(currentComment.body)
-      ) {
-        commentId = currentComment.id;
-        break;
-      }
-    }
+		const comments = (await this.octokit.rest.issues.listComments(commentInfo))
+			.data;
+		for (const currentComment of comments) {
+			if (
+				currentComment.user.type === "Bot" &&
+				/<sub>[\s\n]*contributor-collection-action/.test(currentComment.body)
+			) {
+				commentId = currentComment.id;
+				break;
+			}
+		}
 
-    if (commentId) {
-      console.log(`Updating previous comment #${commentId}`);
-      try {
-        await this.octokit.rest.issues.updateComment({
-          ...context.repo,
-          comment_id: commentId,
-          body: comment.body,
-        });
-      } catch (e) {
-        console.log("Error editing previous comment: " + e.message);
-        commentId = null;
-      }
-    }
+		if (commentId) {
+			core.info(`Updating previous comment #${commentId}`);
+			try {
+				await this.octokit.rest.issues.updateComment({
+					...context.repo,
+					comment_id: commentId,
+					body: comment.body,
+				});
+			} catch (e) {
+				core.info("Error editing previous comment: " + e.message);
+				commentId = null;
+			}
+		}
 
-    // No previous or edit comment failed.
-    if (!commentId) {
-      console.log("Creating new comment");
-      try {
-        await this.octokit.rest.issues.createComment(comment);
-      } catch (e) {
-        console.log(`Error creating comment: ${e.message}`);
-      }
-    }
-  }
+		// No previous or edit comment failed.
+		if (!commentId) {
+			core.info("Creating new comment");
+			try {
+				await this.octokit.rest.issues.createComment(comment);
+			} catch (e) {
+				core.error(`Error creating comment: ${e.message}`);
+			}
+		}
+	}
 }
 
 ;// CONCATENATED MODULE: external "node:http"
@@ -37618,22 +37619,22 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
  * @returns {Promise<array>}
  */
 async function getWPOrgData(githubUsers) {
-  // Collect WordPress.org usernames
-  const dotorgGHApi =
+	// Collect WordPress.org usernames
+	const dotorgGHApi =
     "https://profiles.wordpress.org/wp-json/wporg-github/v1/lookup/";
 
-  return fetch(dotorgGHApi, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "User-Agent":
+	return fetch(dotorgGHApi, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			"User-Agent":
         "Props Bot: " +
         github.context.repo.owner +
         "/" +
         github.context.repo.repo,
-    },
-    body: JSON.stringify({ github_user: githubUsers }),
-  }).then((response) => response.json());
+		},
+		body: JSON.stringify({ github_user: githubUsers }),
+	}).then((response) => response.json());
 }
 
 ;// CONCATENATED MODULE: ./src/contribution-collector.js
@@ -37653,7 +37654,7 @@ const prNumber = context.payload?.pull_request?.number;
  *
  * @type {string[]}
  */
-const contributorTypes = ["committers", "reviewers", "commenters", "reporters"];
+const contributorTypes = ["committers", "reviewers", "commenters", "reporters", "unconnected"];
 
 /**
  * List of user data objects.
@@ -37668,20 +37669,19 @@ const userData = [];
  * @type {*[]}
  */
 const contributors = contributorTypes.reduce((acc, type) => {
-  acc[type] = new Set();
-  return acc;
+	acc[type] = new Set();
+	return acc;
 }, {});
 
 async function run() {
-  // Get a list of contributors.
-  const contributorsList = await getContributorsList();
-  core.debug(contributorsList);
+	// Get a list of contributors.
+	const contributorsList = await getContributorsList();
 
-  // Comment on the pull request.
-  await gh.commentProps({
-    context,
-    contributorsList,
-  });
+	// Comment on the pull request.
+	await gh.commentProps({
+		context,
+		contributorsList,
+	});
 }
 
 /**
@@ -37693,149 +37693,168 @@ async function run() {
  * @returns {Promise<string>}
  */
 async function getContributorsList() {
-  const contributorData = await gh.getContributorData({
-    owner,
-    repo,
-    prNumber,
-  });
+	const contributorData = await gh.getContributorData({
+		owner,
+		repo,
+		prNumber,
+	});
 
-  // Process pull request commits.
-  for (const commit of contributorData?.commits?.nodes || []) {
-    /*
-     * Commits are sometimes made by an email that is not associated with a GitHub account.
-     * For these, info that may help us guess later.
-     */
-    if (null === commit.commit.author.user) {
-      core.info("User object does not exist.");
-      contributors.committers.add(commit.commit.author.email);
-      userData[commit.commit.author.email] = {
-        name: commit.commit.author.name,
-        email: commit.commit.author.email,
-      };
-    } else {
-      if (skipUser(commit.commit.author.user.login)) {
-        continue;
-      }
+	core.debug('Raw contributor data:');
+	core.debug(contributorData);
 
-      core.info("Logging committer");
-      contributors.committers.add(commit.commit.author.user.login);
-      userData[commit.commit.author.user.login] = commit.commit.author.user;
-    }
-  }
+	// Process pull request commits.
+	for (const commit of contributorData?.commits?.nodes || []) {
+		/*
+		 * Commits are sometimes made by an email that is not associated with a GitHub account.
+		 * For these, info that may help us guess later.
+		 */
+		if (null === commit.commit.author.user) {
+			contributors.committers.add(commit.commit.author.email);
+			userData[commit.commit.author.email] = {
+				name: commit.commit.author.name,
+				email: commit.commit.author.email,
+			};
+		} else {
+			if (skipUser(commit.commit.author.user.login)) {
+				continue;
+			}
 
-  core.debug(contributors);
-  core.debug(userData);
+			contributors.committers.add(commit.commit.author.user.login);
+			userData[commit.commit.author.user.login] = commit.commit.author.user;
+		}
+	}
 
-  // Process pull request reviews.
-  contributorData.reviews.nodes
-    .filter((review) => !skipUser(review.author.login))
-    .forEach((review) => contributors.reviewers.add(review.author.login));
+	core.debug('Committers:');
+	core.debug(contributors.committers);
 
-  core.debug(contributors);
+	// Process pull request reviews.
+	contributorData.reviews.nodes
+		.filter((review) => !skipUser(review.author.login))
+		.forEach((review) => contributors.reviewers.add(review.author.login));
 
-  // Process pull request comments.
-  contributorData.comments.nodes
-    .filter((comment) => !skipUser(comment.author.login))
-    .forEach((comment) => contributors.commenters.add(comment.author.login));
+	core.debug('Reviewers:');
+	core.debug(contributors.reviewers);
 
-  // Process reporters and commenters for linked issues.
-  for (const linkedIssue of contributorData.closingIssuesReferences.nodes) {
-    if (!skipUser(linkedIssue.author.login)) {
-      contributors.reporters.add(linkedIssue.author.login);
-    }
+	// Process pull request comments.
+	contributorData.comments.nodes
+		.filter((comment) => !skipUser(comment.author.login))
+		.forEach((comment) => contributors.commenters.add(comment.author.login));
 
-    for (const issueComment of linkedIssue.comments.nodes) {
-      if (skipUser(issueComment.author.login)) {
-        continue;
-      }
+	core.debug('Commenters:');
+	core.debug(contributors.commenters);
 
-      contributors.commenters.add(issueComment.author.login);
-    }
-  }
+	// Process reporters and commenters for linked issues.
+	for (const linkedIssue of contributorData.closingIssuesReferences.nodes) {
+		if (!skipUser(linkedIssue.author.login)) {
+			contributors.reporters.add(linkedIssue.author.login);
+		}
 
-  core.debug(contributors);
+		for (const issueComment of linkedIssue.comments.nodes) {
+			if (skipUser(issueComment.author.login)) {
+				continue;
+			}
 
-  // We already have user info for committers, we need to grab it for everyone else.
-  if (
-    [
-      ...contributors.reviewers,
-      ...contributors.commenters,
-      ...contributors.reporters,
-    ].length > 0
-  ) {
-    const contributorData = await gh.getUsersData([
-      ...contributors.reviewers,
-      ...contributors.commenters,
-      ...contributors.reporters,
-    ]);
+			contributors.commenters.add(issueComment.author.login);
+		}
+	}
 
-    Object.values(contributorData).forEach((user) => {
-      userData[user.login] = user;
-    });
-  }
+	core.debug('Reporters:');
+	core.debug(contributors.reporters);
 
-  const githubUsers = [];
-  Object.keys(contributors).forEach((key) => {
-    contributors[key].forEach((contributor) => {
-      githubUsers.push(contributor);
-    });
-  });
+	core.debug('Commenters (including linked issues):');
+	core.debug(contributors.commenters);
 
-  // No contributors were gathered.
-  if (githubUsers.length == 0) {
-    return;
-  }
+	// We already have user info for committers, we need to grab it for everyone else.
+	if (
+		[
+			...contributors.reviewers,
+			...contributors.commenters,
+			...contributors.reporters,
+		].length > 0
+	) {
+		const contributorData = await gh.getUsersData([
+			...contributors.reviewers,
+			...contributors.commenters,
+			...contributors.reporters,
+		]);
 
-  // Collect WordPress.org usernames
-  const wpOrgData = await getWPOrgData(githubUsers);
-  core.debug(wpOrgData);
+		Object.values(contributorData).forEach((user) => {
+			userData[user.login] = user;
+		});
+	}
 
-  // Add each contributor's wp.org username to their user data.
-  Object.keys(userData).forEach((contributor) => {
-    if (
-      Object.prototype.hasOwnProperty.call(wpOrgData, contributor) &&
-      wpOrgData[contributor] !== false
-    ) {
-      userData[contributor].dotOrg = wpOrgData[contributor].slug;
-    }
-  });
+	const githubUsers = [];
+	Object.keys(contributors).forEach((key) => {
+		contributors[key].forEach((contributor) => {
+			githubUsers.push(contributor);
+		});
+	});
 
-  const unconnectedUsers = [];
+	// No contributors were gathered.
+	if (githubUsers.length == 0) {
+		core.info('No contributors found.');
+		return;
+	} else {
+		core.debug('GitHub contributor usernames:');
+		core.debug(githubUsers);
+	}
 
-  return contributorTypes
-    .map((priority) => {
-      // Skip an empty set of contributors.
-      if (contributors[priority].length === 0) {
-        return [];
-      }
+	// Collect WordPress.org usernames
+	const wpOrgData = await getWPOrgData(githubUsers);
 
-      // Add a header for each section.
-      const header =
+	core.debug('WordPress.org raw data:');
+	core.debug(wpOrgData);
+
+	// Add each contributor's wp.org username to their user data.
+	Object.keys(userData).forEach((contributor) => {
+		if (
+			Object.prototype.hasOwnProperty.call(wpOrgData, contributor) &&
+			wpOrgData[contributor] !== false
+		) {
+			userData[contributor].dotOrg = wpOrgData[contributor].slug;
+		}
+	});
+
+	return contributorTypes
+		.map((priority) => {
+			// Skip an empty set of contributors.
+			if (contributors[priority].length === 0) {
+				return [];
+			}
+
+			// Add a header for each section.
+			const header =
         "# " + priority.replace(/^./, (char) => char.toUpperCase()) + "\n";
 
-      // Generate each props entry, and join them into a single string.
-      return (
-        header +
+			// Generate each props entry, and join them into a single string.
+			return (
+				header +
         [...contributors[priority]]
-          .map((username) => {
-            const { dotOrg } = userData[username];
+        	.map((username) => {
+        		const { dotOrg } = userData[username];
 
-            if (
-              !Object.prototype.hasOwnProperty.call(
-                userData[username],
-                "dotOrg"
-              )
-            ) {
-              unconnectedUsers.push(username);
-              return;
-            }
+        		if (
+        			!Object.prototype.hasOwnProperty.call(
+        				userData[username],
+        				"dotOrg"
+        			)
+        		) {
+					contributors.unconnected.add(username);
+        			return;
+        		}
 
-            return `Co-authored-by: ${username} <${dotOrg}@git.wordpress.org>`;
-          })
-          .join("\n")
-      );
-    })
-    .join("\n\n");
+				if ('unconnected' == priority) {
+					core.debug( 'Unconnected contributor: ' + username );
+					return username;
+				} else {
+					return `Co-authored-by: ${username} <${dotOrg}@git.wordpress.org>`;
+
+				}
+        	})
+        	.join("\n")
+			);
+		})
+		.join("\n\n");
 }
 
 /**
@@ -37846,16 +37865,16 @@ async function getContributorsList() {
  * @return {boolean} true if the username should be skipped. false otherwise.
  */
 function skipUser(username) {
-  const skippedUsers = ["github-actions"];
+	const skippedUsers = ["github-actions"];
 
-  if (
-    -1 === skippedUsers.indexOf(username) &&
-    !contributorAlreadyPresent(username)
-  ) {
-    return false;
-  }
+	if (
+		-1 === skippedUsers.indexOf(username) &&
+       !contributorAlreadyPresent(username)
+	) {
+		return false;
+	}
 
-  return true;
+	return true;
 }
 
 /**
@@ -37868,11 +37887,11 @@ function skipUser(username) {
  * @return {boolean} true if the username is already in the list. false otherwise.
  */
 function contributorAlreadyPresent(username) {
-  for (const contributorType of contributorTypes) {
-    if (contributors[contributorType].has(username)) {
-      return true;
-    }
-  }
+	for (const contributorType of contributorTypes) {
+		if (contributors[contributorType].has(username)) {
+			return true;
+		}
+	}
 }
 
 ;// CONCATENATED MODULE: ./index.js
@@ -37881,13 +37900,13 @@ function contributorAlreadyPresent(username) {
 
 
 async function index_run() {
-  try {
-    await run();
-  } catch (error) {
-    if (error instanceof Error) {
-      core.setFailed(error.message);
-    }
-  }
+	try {
+		await run();
+	} catch (error) {
+		if (error instanceof Error) {
+			core.setFailed(error.message);
+		}
+	}
 }
 
 index_run();
