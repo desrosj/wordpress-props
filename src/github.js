@@ -101,11 +101,9 @@ export default class GitHub {
 		const userData = await this.octokit.graphql(
 			"{" +
 			users.map(
-        		(user) =>
-        		this.escapeForGql(user) +
-            	`: user(login: "${user}") {databaseId, login, name, email}`
-        	) +
-        	"}"
+				(user) => this.escapeForGql(user) + `: user(login: "${user}") {databaseId, login, name, email}`
+			) +
+			"}"
 		);
 		return userData;
 	}

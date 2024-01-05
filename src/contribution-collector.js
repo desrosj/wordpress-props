@@ -9,7 +9,7 @@ const owner = context.repo.owner;
 const repo = context.repo.repo;
 let prNumber = context.payload?.pull_request?.number;
 if ( 'issue_comment' === context.eventName ) {
-  prNumber = context.payload?.issue?.number;
+	prNumber = context.payload?.issue?.number;
 }
 
 /**
@@ -192,29 +192,28 @@ export async function getContributorsList() {
 			// Generate each props entry, and join them into a single string.
 			return (
 				header +
-        [...contributors[priority]]
-        	.map((username) => {
-        		const { dotOrg } = userData[username];
+			[...contributors[priority]]
+				.map((username) => {
+					if ('unconnected' == priority) {
+						core.debug( 'Unconnected contributor: ' + username );
+						return username;
+					}
 
-        		if (
-        			!Object.prototype.hasOwnProperty.call(
-        				userData[username],
-        				"dotOrg"
-        			)
-        		) {
-					contributors.unconnected.add(username);
-        			return;
-        		}
+					const { dotOrg } = userData[username];
+					if (
+						!Object.prototype.hasOwnProperty.call(
+							userData[username],
+							"dotOrg"
+						)
+					) {
+						contributors.unconnected.add(username);
+						return;
+					}
 
-				if ('unconnected' == priority) {
-					core.debug( 'Unconnected contributor: ' + username );
-					return username;
-				} else {
 					return `Co-authored-by: ${username} <${dotOrg}@git.wordpress.org>`;
-
-				}
-        	})
-        	.join("\n")
+				})
+				.filter((el) => el)
+				.join("\n")
 			);
 		})
 		.join("\n\n");
