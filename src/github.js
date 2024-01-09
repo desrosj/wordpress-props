@@ -141,7 +141,7 @@ export default class GitHub {
 
 		const comment = {
 			...commentInfo,
-			body: commentMessage + "\n\n<sub>contributor-collection-action</sub>",
+			body: commentMessage + "\n\n<sub>props-bot-action</sub>",
 		};
 
 		const comments = (await this.octokit.rest.issues.listComments(commentInfo))
@@ -149,7 +149,7 @@ export default class GitHub {
 		for (const currentComment of comments) {
 			if (
 				currentComment.user.type === "Bot" &&
-				/<sub>[\s\n]*contributor-collection-action/.test(currentComment.body)
+				/<sub>[\s\n]*props-bot-action/.test(currentComment.body)
 			) {
 				commentId = currentComment.id;
 				break;
