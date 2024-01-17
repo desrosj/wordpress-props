@@ -113,13 +113,18 @@ export default class GitHub {
 	 * - If a comment already exists, it will be updated.
 	 *
 	 * @param {Object} context The GitHub context.
-	 * @param {string} contributorsList The list of contributors.
+	 * @param {array} contributorsList The list of contributors.
 	 */
 	async commentProps({ context, contributorsList }) {
 		if (!contributorsList) {
-			core.info("No contributors list provided.");
+			core.info("No contributors were provided.");
 			return;
 		}
+
+		core.debug( "Contributor list received:" );
+		core.debug( contributorsList );
+		core.debug( contributorsList.svn );
+		console.debug( contributorsList );
 
 		let prNumber = context.payload?.pull_request?.number;
 		if ( 'issue_comment' === context.eventName ) {
@@ -134,9 +139,17 @@ export default class GitHub {
 		};
 
 		const commentMessage =
-		"Here is a list of everyone that appears to have contributed to this PR and any linked issues:\n\n" +
+		"I've collected a list of contributors that have interacted in some way with this pull request or linked issues.\n\n" +
+		"There's a few ways you can credit these contributors.\n\n" +
+		"## Core SVN\n\n" +
 		"```\n" +
-		contributorsList +
+		"Props: " + contributorsList['svn'].join(', ') + "." +
+		"\n```\n\n" +
+
+		"## GitHub Merge commits\n\n" +
+		"```\n" +
+		"Unlinked contributors: " + contributorsList['unlinked'].join(', ') + ".\n" +
+		contributorsList['coAuthored'].join("\n") +
 		"\n```";
 
 		const comment = {
