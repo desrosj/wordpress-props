@@ -35405,6 +35405,9 @@ class GitHub {
 			return;
 		}
 
+		core.debug( "Contributor list received:" );
+		core.debug( contributorsList );
+
 		let prNumber = context.payload?.pull_request?.number;
 		if ( 'issue_comment' === context.eventName ) {
 			prNumber = context.payload?.issue?.number;
@@ -35422,13 +35425,13 @@ class GitHub {
 		"There's a few ways you can credit these contributors.\n\n" +
 		"## Core SVN\n\n" +
 		"```\n" +
-		"Props: " + contributorsList.svn.join(', ') + "." +
+		"Props: " + contributorsList['svn'].join(', ') + "." +
 		"\n```\n\n" +
 
 		"## GitHub Merge commits\n\n" +
 		"```\n" +
-		"Unlinked contributors: " + contributorsList.unlinked.join() + ".\n" +
-		contributorsList.coAuthored.join("\n") +
+		"Unlinked contributors: " + contributorsList['unlinked'].join(', ') + ".\n" +
+		contributorsList['coAuthored'].join("\n") +
 		"\n```";
 
 		const comment = {
