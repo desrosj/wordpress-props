@@ -35401,7 +35401,7 @@ class GitHub {
 	 */
 	async commentProps({ context, contributorsList }) {
 		if (!contributorsList) {
-			core.info("No contributors list provided.");
+			core.info("No contributors were provided.");
 			return;
 		}
 
@@ -35422,7 +35422,7 @@ class GitHub {
 		"There's a few ways you can credit these contributors.\n\n" +
 		"## Core SVN\n\n" +
 		"```\n" +
-		"Props: " + contributorsList.svn.join() + "." +
+		"Props: " + contributorsList.svn.join(', ') + "." +
 		"\n```\n\n" +
 
 		"## GitHub Merge commits\n\n" +
@@ -37739,7 +37739,6 @@ async function getContributorsList() {
 	}
 
 	core.debug('Committers:');
-	core.debug(contributors);
 	core.debug(contributors.committers);
 
 	// Process pull request reviews.
@@ -37870,41 +37869,9 @@ async function getContributorsList() {
 				.filter((el) => el);
 		});
 
-	console.debug( contributorLists );
+	core.debug( contributorLists );
 
-	return contributorTypes
-		.map((priority) => {
-			// Skip an empty set of contributors.
-			if (contributors[priority].length === 0) {
-				return [];
-			}
-
-			// Generate each props entry, and join them into a single string.
-			return (
-				[...contributors[priority]]
-					.map((username) => {
-						if ('unlinked' == priority) {
-							core.debug( 'Unlinked contributor: ' + username );
-							return `Unlinked contributor: ${username}`;
-						}
-
-						const { dotOrg } = userData[username];
-						if (
-							!Object.prototype.hasOwnProperty.call(
-								userData[username],
-								"dotOrg"
-							)
-						) {
-							contributors.unlinked.add(username);
-							return;
-						}
-
-						return `Co-Authored-By: ${username} <${dotOrg}@git.wordpress.org>`;
-					})
-					.filter((el) => el)
-			);
-		})
-		.join("\n");
+	return contributorLists;
 }
 
 /**

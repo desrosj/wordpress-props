@@ -117,7 +117,7 @@ export default class GitHub {
 	 */
 	async commentProps({ context, contributorsList }) {
 		if (!contributorsList) {
-			core.info("No contributors list provided.");
+			core.info("No contributors were provided.");
 			return;
 		}
 
@@ -138,7 +138,7 @@ export default class GitHub {
 		"There's a few ways you can credit these contributors.\n\n" +
 		"## Core SVN\n\n" +
 		"```\n" +
-		"Props: " + contributorsList.svn.join() + "." +
+		"Props: " + contributorsList.svn.join(', ') + "." +
 		"\n```\n\n" +
 
 		"## GitHub Merge commits\n\n" +
