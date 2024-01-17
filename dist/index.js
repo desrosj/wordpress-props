@@ -35397,7 +35397,7 @@ class GitHub {
 	 * - If a comment already exists, it will be updated.
 	 *
 	 * @param {Object} context The GitHub context.
-	 * @param {string} contributorsList The list of contributors.
+	 * @param {array} contributorsList The list of contributors.
 	 */
 	async commentProps({ context, contributorsList }) {
 		if (!contributorsList) {
@@ -35407,6 +35407,7 @@ class GitHub {
 
 		core.debug( "Contributor list received:" );
 		core.debug( contributorsList );
+		core.debug( contributorsList.svn );
 		console.debug( contributorsList );
 
 		let prNumber = context.payload?.pull_request?.number;
