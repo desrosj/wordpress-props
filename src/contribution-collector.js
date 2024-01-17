@@ -182,6 +182,8 @@ export async function getContributorsList() {
 
 	const contributorLists = [];
 
+	contributorLists['svn'] = new Set();
+
 	// Create list of SVN props.
 	contributorLists.svn.add(
 		'Props: ' +
