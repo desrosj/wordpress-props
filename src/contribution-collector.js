@@ -88,6 +88,7 @@ export async function getContributorsList() {
 	}
 
 	core.debug('Committers:');
+	core.debug(contributors);
 	core.debug(contributors.committers);
 
 	// Process pull request reviews.
@@ -104,6 +105,7 @@ export async function getContributorsList() {
 		.forEach((comment) => contributors.commenters.add(comment.author.login));
 
 	core.debug('Commenters:');
+	core.debug(contributors);
 	core.debug(contributors.commenters);
 
 	// Process reporters and commenters for linked issues.
@@ -207,10 +209,10 @@ export async function getContributorsList() {
 
 						return `Co-Authored-By: ${username} <${dotOrg}@git.wordpress.org>`;
 					})
-					.filter((el) => el)
+					.filter((el) => el).join("\n")
 			);
 		})
-		.join("\n");
+
 }
 
 /**

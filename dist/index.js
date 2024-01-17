@@ -35418,7 +35418,8 @@ class GitHub {
 		};
 
 		const commentMessage =
-		"Here is a list of everyone that appears to have contributed to this PR and any linked issues:\n\n" +
+		"I've collected a list of contributors that have interacted in some way with either this pull request and any linked issues." +
+		"Here's a list showing how they contributed for verification purposes:\n\n" +
 		"```\n" +
 		contributorsList +
 		"\n```";
@@ -37731,6 +37732,7 @@ async function getContributorsList() {
 	}
 
 	core.debug('Committers:');
+	core.debug(contributors);
 	core.debug(contributors.committers);
 
 	// Process pull request reviews.
@@ -37747,6 +37749,7 @@ async function getContributorsList() {
 		.forEach((comment) => contributors.commenters.add(comment.author.login));
 
 	core.debug('Commenters:');
+	core.debug(contributors);
 	core.debug(contributors.commenters);
 
 	// Process reporters and commenters for linked issues.
@@ -37850,10 +37853,10 @@ async function getContributorsList() {
 
 						return `Co-Authored-By: ${username} <${dotOrg}@git.wordpress.org>`;
 					})
-					.filter((el) => el)
+					.filter((el) => el).join("\n")
 			);
 		})
-		.join("\n");
+
 }
 
 /**

@@ -134,7 +134,8 @@ export default class GitHub {
 		};
 
 		const commentMessage =
-		"Here is a list of everyone that appears to have contributed to this PR and any linked issues:\n\n" +
+		"I've collected a list of contributors that have interacted in some way with either this pull request and any linked issues." +
+		"Here's a list showing how they contributed for verification purposes:\n\n" +
 		"```\n" +
 		contributorsList +
 		"\n```";
