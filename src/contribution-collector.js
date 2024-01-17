@@ -180,6 +180,39 @@ export async function getContributorsList() {
 		}
 	});
 
+	const contributorLists = [];
+
+	// Create list of SVN props.
+	contributorLists.svn.add(
+		'Props: ' +
+		contributorTypes
+			.map((priority) => {
+				// Skip an empty set of contributors.
+				if (contributors[priority].length === 0 || 'unlinked' == priority) {
+					return [];
+				}
+
+				// Generate each props entry, and join them into a single string.
+				return (
+					[...contributors[priority]]
+						.map((username) => {
+							const { dotOrg } = userData[username];
+							if (
+								!Object.prototype.hasOwnProperty.call(
+									userData[username],
+									"dotOrg"
+								)
+							) {
+								return;
+							}
+
+							return dotOrg;
+						})
+						.filter((el) => el)
+				);
+			}).join()
+	);
+
 	return contributorTypes
 		.map((priority) => {
 			// Skip an empty set of contributors.
