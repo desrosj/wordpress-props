@@ -37821,11 +37821,11 @@ async function getContributorsList() {
 
 	// List to return from the function.
 	const contributorLists = [];
-	contributorLists['github'] = new Set(githubUsers);
+	contributorLists['github'] = [];
 
 	// Collect WordPress.org usernames
 	const wpOrgData = await getWPOrgData(githubUsers);
-	contributorLists['svn'] = new Set();
+	contributorLists['svn'] = [];
 
 	core.debug('WordPress.org raw data:');
 	core.debug(wpOrgData);
@@ -37837,12 +37837,12 @@ async function getContributorsList() {
 			wpOrgData[contributor] !== false
 		) {
 			userData[contributor].dotOrg = wpOrgData[contributor].slug;
-			contributorLists.svn.add(wpOrgData[contributor].slug);
+			contributorLists['svn'].push(wpOrgData[contributor].slug);
 		}
 	});
 
-	contributorLists['coAuthored'] = new Set();
-	contributorLists['unlinked'] = new Set();
+	contributorLists['coAuthored'] = [];
+	contributorLists['unlinked'] = [];
 
 	contributorTypes
 		.map((priority) => {
@@ -37865,11 +37865,11 @@ async function getContributorsList() {
 							"dotOrg"
 						)
 					) {
-						contributorLists.unlinked.add(username);
+						contributorLists['unlinked'].push(username);
 						return;
 					}
 
-					return contributorLists.coAuthored.add( `Co-Authored-By: ${username} <${dotOrg}@git.wordpress.org>` );
+					return contributorLists['coAuthored'].push( `Co-Authored-By: ${username} <${dotOrg}@git.wordpress.org>` );
 				})
 				.filter((el) => el);
 		});
