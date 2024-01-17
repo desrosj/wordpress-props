@@ -35397,13 +35397,18 @@ class GitHub {
 	 * - If a comment already exists, it will be updated.
 	 *
 	 * @param {Object} context The GitHub context.
-	 * @param {string} contributorsList The list of contributors.
+	 * @param {array} contributorsList The list of contributors.
 	 */
 	async commentProps({ context, contributorsList }) {
 		if (!contributorsList) {
-			core.info("No contributors list provided.");
+			core.info("No contributors were provided.");
 			return;
 		}
+
+		core.debug( "Contributor list received:" );
+		core.debug( contributorsList );
+		core.debug( contributorsList.svn );
+		console.debug( contributorsList );
 
 		let prNumber = context.payload?.pull_request?.number;
 		if ( 'issue_comment' === context.eventName ) {
@@ -35418,9 +35423,17 @@ class GitHub {
 		};
 
 		const commentMessage =
-		"Here is a list of everyone that appears to have contributed to this PR and any linked issues:\n\n" +
+		"I've collected a list of contributors that have interacted in some way with this pull request or linked issues.\n\n" +
+		"There's a few ways you can credit these contributors.\n\n" +
+		"## Core SVN\n\n" +
 		"```\n" +
-		contributorsList +
+		"Props: " + contributorsList['svn'].join(', ') + "." +
+		"\n```\n\n" +
+
+		"## GitHub Merge commits\n\n" +
+		"```\n" +
+		"Unlinked contributors: " + contributorsList['unlinked'].join(', ') + ".\n" +
+		contributorsList['coAuthored'].join("\n") +
 		"\n```";
 
 		const comment = {
@@ -37660,7 +37673,7 @@ if ( 'issue_comment' === context.eventName ) {
  *
  * @type {string[]}
  */
-const contributorTypes = ["committers", "reviewers", "commenters", "reporters", "unconnected"];
+const contributorTypes = ["committers", "reviewers", "commenters", "reporters", "unlinked"];
 
 /**
  * List of user data objects.
@@ -37747,6 +37760,7 @@ async function getContributorsList() {
 		.forEach((comment) => contributors.commenters.add(comment.author.login));
 
 	core.debug('Commenters:');
+	core.debug(contributors);
 	core.debug(contributors.commenters);
 
 	// Process reporters and commenters for linked issues.
@@ -37805,8 +37819,13 @@ async function getContributorsList() {
 		core.debug(githubUsers);
 	}
 
+	// List to return from the function.
+	const contributorLists = [];
+	contributorLists['github'] = [];
+
 	// Collect WordPress.org usernames
 	const wpOrgData = await getWPOrgData(githubUsers);
+	contributorLists['svn'] = [];
 
 	core.debug('WordPress.org raw data:');
 	core.debug(wpOrgData);
@@ -37818,28 +37837,25 @@ async function getContributorsList() {
 			wpOrgData[contributor] !== false
 		) {
 			userData[contributor].dotOrg = wpOrgData[contributor].slug;
+			contributorLists['svn'].push(wpOrgData[contributor].slug);
 		}
 	});
 
-	return contributorTypes
+	contributorLists['coAuthored'] = [];
+	contributorLists['unlinked'] = [];
+
+	contributorTypes
 		.map((priority) => {
 			// Skip an empty set of contributors.
 			if (contributors[priority].length === 0) {
 				return [];
 			}
 
-			// Add a header for each section.
-			const header =
-        "# " + priority.replace(/^./, (char) => char.toUpperCase()) + "\n";
-
-			// Generate each props entry, and join them into a single string.
-			return (
-				header +
 			[...contributors[priority]]
 				.map((username) => {
-					if ('unconnected' == priority) {
-						core.debug( 'Unconnected contributor: ' + username );
-						return username;
+					if ('unlinked' == priority) {
+						core.debug( 'Unlinked contributor: ' + username );
+						return `Unlinked contributor: ${username}`;
 					}
 
 					const { dotOrg } = userData[username];
@@ -37849,17 +37865,18 @@ async function getContributorsList() {
 							"dotOrg"
 						)
 					) {
-						contributors.unconnected.add(username);
+						contributorLists['unlinked'].push(username);
 						return;
 					}
 
-					return `Co-authored-by: ${username} <${dotOrg}@git.wordpress.org>`;
+					return contributorLists['coAuthored'].push( `Co-Authored-By: ${username} <${dotOrg}@git.wordpress.org>` );
 				})
-				.filter((el) => el)
-				.join("\n")
-			);
-		})
-		.join("\n\n");
+				.filter((el) => el);
+		});
+
+	core.debug( contributorLists );
+console.debug( contributorLists );
+	return contributorLists;
 }
 
 /**
