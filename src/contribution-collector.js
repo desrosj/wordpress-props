@@ -210,8 +210,7 @@ export async function getContributorsList() {
 					.filter((el) => el)
 					.join("\n")
 			);
-		})
-		.join("\n");
+		});
 }
 
 /**
