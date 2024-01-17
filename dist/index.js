@@ -35424,9 +35424,8 @@ class GitHub {
 
 		const commentMessage =
 		"Hello contributors!" +
-		"I've collected a list of people who have interacted in some way with this pull request or any linked issues.\n\n" +
-		"There's a few ways you can credit these contributors.\n\n" +
-		"As always, please manually review this list. [Give props liberally](https://make.wordpress.org/core/handbook/best-practices/commit-messages/#props), but remove anyone users who spammed or did not contribute positively." +
+		"I've collected a list of people who have interacted in some way with this pull request or any linked issues and provided a few useful formats.\n\n" +
+		"As always, please manually review this list. [Give props liberally](https://make.wordpress.org/core/handbook/best-practices/commit-messages/#props), but remove anyone users who spammed or did not contribute positively.\n\n" +
 		"## Core SVN\n\n" +
 		"If you're a Core Committer, this list can be used when committing to `wordpress-develop` in SVN:\n" +
 		"```\n" +
@@ -35434,8 +35433,8 @@ class GitHub {
 		"\n```\n\n" +
 
 		"## GitHub Merge commits\n\n" +
-		"If you're working with a repository on GitHub, copy and paste the following snippet into the merge commit message. This can be used in any GIT repository, not just the ones under the WordPress organization." +
-		"**Note: There must be an empty line before the first`Co-Authored-By:` trailer and nothing can come after them." +
+		"If you're working with a repository on GitHub, copy and paste the following snippet into the merge commit message. This can be used in any GIT repository, not just the ones under the WordPress organization.\n\n" +
+		"**Note: There must be an empty line before the first`Co-Authored-By:` trailer and nothing can come after them.\n" +
 		"```\n" +
 		"Unlinked contributors: " + contributorsList['unlinked'].join(', ') + ".\n\n\n" +
 		contributorsList['coAuthored'].join("\n") +
