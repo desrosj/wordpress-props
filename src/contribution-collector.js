@@ -199,7 +199,7 @@ export async function getContributorsList() {
 				.map((username) => {
 					if ('unlinked' == priority) {
 						core.debug( 'Unlinked contributor: ' + username );
-						return `Unlinked contributor: ${username}`;
+						return;
 					}
 
 					const { dotOrg } = userData[username];
@@ -219,7 +219,7 @@ export async function getContributorsList() {
 		});
 
 	core.debug( contributorLists );
-console.debug( contributorLists );
+
 	return contributorLists;
 }
 
