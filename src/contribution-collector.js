@@ -182,38 +182,43 @@ export async function getContributorsList() {
 
 	const contributorLists = [];
 
+	// Create a list of SVN style props.
 	contributorLists['svn'] = new Set();
+	contributorLists['coAuthored'] = new Set();
+	contributorLists['unlinked'] = new Set();
 
-	// Create list of SVN props.
-	contributorLists.svn.add(
-		'Props: ' +
-		contributorTypes
-			.map((priority) => {
-				// Skip an empty set of contributors.
-				if (contributors[priority].length === 0 || 'unlinked' == priority) {
-					return [];
-				}
+	contributorTypes
+		.map((priority) => {
+			// Skip an empty set of contributors.
+			if (contributors[priority].length === 0) {
+				return [];
+			}
 
-				// Generate each props entry, and join them into a single string.
-				return (
-					[...contributors[priority]]
-						.map((username) => {
-							const { dotOrg } = userData[username];
-							if (
-								!Object.prototype.hasOwnProperty.call(
-									userData[username],
-									"dotOrg"
-								)
-							) {
-								return;
-							}
+			[...contributors[priority]]
+				.map((username) => {
+					if ('unlinked' == priority) {
+						core.debug( 'Unlinked contributor: ' + username );
+						return `Unlinked contributor: ${username}`;
+					}
 
-							return dotOrg;
-						})
-						.filter((el) => el)
-				);
-			}).join()
-	);
+					const { dotOrg } = userData[username];
+					if (
+						!Object.prototype.hasOwnProperty.call(
+							userData[username],
+							"dotOrg"
+						)
+					) {
+						contributorLists.unlinked.add(username);
+					}
+
+					contributorLists.svn.add(dotOrg);
+					contributorLists.github.add(username);
+					contributorLists.coAuthored.add( `Co-Authored-By: ${username} <${dotOrg}@git.wordpress.org>` );
+				})
+				.filter((el) => el)
+		});
+
+	console.debug( contributorLists );
 
 	return contributorTypes
 		.map((priority) => {

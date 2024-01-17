@@ -135,9 +135,16 @@ export default class GitHub {
 
 		const commentMessage =
 		"I've collected a list of contributors that have interacted in some way with this pull request or linked issues.\n\n" +
-		"Here's a list showing how they contributed for verification purposes:\n\n" +
+		"There's a few ways you can credit these contributors.\n\n" +
+		"## Core SVN\n\n" +
 		"```\n" +
-		contributorsList +
+		"Props: " + contributorsList.svn.join() + "." +
+		"\n```\n\n" +
+
+		"## GitHub Merge commits\n\n" +
+		"```\n" +
+		"Unlinked contributors: " + contributorsList.unlinked.join() + ".\n" +
+		contributorsList.coAuthored.join("\n") +
 		"\n```";
 
 		const comment = {
