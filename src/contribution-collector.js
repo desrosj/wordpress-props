@@ -209,10 +209,10 @@ export async function getContributorsList() {
 
 						return `Co-Authored-By: ${username} <${dotOrg}@git.wordpress.org>`;
 					})
-					.filter((el) => el).join("\n")
+					.filter((el) => el)
 			);
 		})
-
+		.join("\n");
 }
 
 /**

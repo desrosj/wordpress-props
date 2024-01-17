@@ -35418,7 +35418,7 @@ class GitHub {
 		};
 
 		const commentMessage =
-		"I've collected a list of contributors that have interacted in some way with either this pull request and any linked issues." +
+		"I've collected a list of contributors that have interacted in some way with either this pull request and any linked issues.\n\n" +
 		"Here's a list showing how they contributed for verification purposes:\n\n" +
 		"```\n" +
 		contributorsList +
@@ -37853,10 +37853,10 @@ async function getContributorsList() {
 
 						return `Co-Authored-By: ${username} <${dotOrg}@git.wordpress.org>`;
 					})
-					.filter((el) => el).join("\n")
+					.filter((el) => el)
 			);
 		})
-
+		.join("\n");
 }
 
 /**
