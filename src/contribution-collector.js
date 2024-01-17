@@ -181,7 +181,7 @@ export async function getContributorsList() {
 			wpOrgData[contributor] !== false
 		) {
 			userData[contributor].dotOrg = wpOrgData[contributor].slug;
-			contributorLists['svn'].add(wpOrgData[contributor].slug);
+			contributorLists.svn.add(wpOrgData[contributor].slug);
 		}
 	});
 
