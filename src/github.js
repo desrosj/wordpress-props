@@ -123,6 +123,7 @@ export default class GitHub {
 
 		core.debug( "Contributor list received:" );
 		core.debug( contributorsList );
+		console.debug( contributorsList );
 
 		let prNumber = context.payload?.pull_request?.number;
 		if ( 'issue_comment' === context.eventName ) {

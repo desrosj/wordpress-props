@@ -219,7 +219,7 @@ export async function getContributorsList() {
 		});
 
 	core.debug( contributorLists );
-
+console.debug( contributorLists );
 	return contributorLists;
 }
 
