@@ -10,6 +10,10 @@ on:
       - created
       - deleted
 
+# Disable permissions for all available scopes by default.
+# Any needed permissions should be configured at the job level.
+permissions: {}
+
 jobs:
   # Tests that the Action works as expected.
   #
@@ -19,6 +23,10 @@ jobs:
   test:
     name: Test the Action
     runs-on: ubuntu-latest
+    permissions:
+      # The action needs permission `write` permission for PRs in order to add a comment.
+      pull-requests: write
+      contents: read
 
     steps:
     - name: Checkout repository
