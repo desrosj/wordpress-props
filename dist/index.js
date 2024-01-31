@@ -35407,8 +35407,6 @@ class GitHub {
 
 		core.debug( "Contributor list received:" );
 		core.debug( contributorsList );
-		core.debug( contributorsList.svn );
-		console.debug( contributorsList );
 
 		let prNumber = context.payload?.pull_request?.number;
 		if ( 'issue_comment' === context.eventName ) {
@@ -35422,23 +35420,34 @@ class GitHub {
 			issue_number: prNumber,
 		};
 
-		const commentMessage =
-		"I've collected a list of contributors that have interacted in some way with this pull request or linked issues.\n\n" +
-		"There's a few ways you can credit these contributors.\n\n" +
-		"## Core SVN\n\n" +
+		let commentMessage = "The following accounts have interacted with this PR and/or linked issues. I will continue to update these lists as activity occurs. You can also manually ask me to refresh this list by adding the `props-bot` label.\n\n";
+
+		if ( contributorsList['unlinked'].length > 0 ) {
+			commentMessage += "## Unlinked Accounts\n\n" +
+				"The following contributors have not linked their GitHub and WordPress.org accounts: @" + contributorsList['unlinked'].join(', @') + ".\n\n" +
+				"Contributors, please [read how to link your accounts](https://make.wordpress.org/core/2020/03/19/associating-github-accounts-with-wordpress-org-profiles/) to ensure your work is properly credited in WordPress releases.\n\n";
+		}
+
+		commentMessage += "## Core SVN\n\n" +
+		"If you're a Core Committer, use this list when committing to `wordpress-develop` in SVN:\n" +
 		"```\n" +
 		"Props: " + contributorsList['svn'].join(', ') + "." +
 		"\n```\n\n" +
-
 		"## GitHub Merge commits\n\n" +
-		"```\n" +
-		"Unlinked contributors: " + contributorsList['unlinked'].join(', ') + ".\n" +
-		contributorsList['coAuthored'].join("\n") +
-		"\n```";
+		"If you're merging code through a pull request on GitHub, copy and paste the following into the bottom of the merge commit message.\n\n" +
+		"```\n";
+
+		if ( contributorsList['unlinked'].length > 0 ) {
+			commentMessage += "Unlinked contributors: " + contributorsList['unlinked'].join(', ') + ".\n\n";
+		}
+
+		commentMessage += contributorsList['coAuthored'].join("\n") +
+		"\n```\n\n" +
+		"**To understand the WordPress project's expectations around crediting contributors, please [review the core handbook](https://make.wordpress.org/core/handbook/).**\n";
 
 		const comment = {
 			...commentInfo,
-			body: commentMessage + "\n\n<sub>props-bot-action</sub>",
+			body: commentMessage,
 		};
 
 		const comments = (await this.octokit.rest.issues.listComments(commentInfo))
@@ -35446,7 +35455,7 @@ class GitHub {
 		for (const currentComment of comments) {
 			if (
 				currentComment.user.type === "Bot" &&
-				/<sub>[\s\n]*props-bot-action/.test(currentComment.body)
+				currentComment.body.includes( 'The following accounts have interacted with this PR and/or linked issues.' )
 			) {
 				commentId = currentComment.id;
 				break;
@@ -37760,7 +37769,6 @@ async function getContributorsList() {
 		.forEach((comment) => contributors.commenters.add(comment.author.login));
 
 	core.debug('Commenters:');
-	core.debug(contributors);
 	core.debug(contributors.commenters);
 
 	// Process reporters and commenters for linked issues.
@@ -37855,7 +37863,7 @@ async function getContributorsList() {
 				.map((username) => {
 					if ('unlinked' == priority) {
 						core.debug( 'Unlinked contributor: ' + username );
-						return `Unlinked contributor: ${username}`;
+						return;
 					}
 
 					const { dotOrg } = userData[username];
@@ -37875,7 +37883,7 @@ async function getContributorsList() {
 		});
 
 	core.debug( contributorLists );
-console.debug( contributorLists );
+
 	return contributorLists;
 }
 

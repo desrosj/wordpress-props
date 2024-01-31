@@ -104,7 +104,6 @@ export async function getContributorsList() {
 		.forEach((comment) => contributors.commenters.add(comment.author.login));
 
 	core.debug('Commenters:');
-	core.debug(contributors);
 	core.debug(contributors.commenters);
 
 	// Process reporters and commenters for linked issues.
@@ -199,7 +198,7 @@ export async function getContributorsList() {
 				.map((username) => {
 					if ('unlinked' == priority) {
 						core.debug( 'Unlinked contributor: ' + username );
-						return `Unlinked contributor: ${username}`;
+						return;
 					}
 
 					const { dotOrg } = userData[username];
@@ -219,7 +218,7 @@ export async function getContributorsList() {
 		});
 
 	core.debug( contributorLists );
-console.debug( contributorLists );
+
 	return contributorLists;
 }
 
