@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38.1",
+    "@wordpress/scripts": "^27.1.0",
     "eslint": "^8.56.0",
     "jest": "^29.7.0"
   }
